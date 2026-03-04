@@ -2,8 +2,7 @@
 
 All notable changes to the "path-server-vscode" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
 ## [Unreleased]
-
-- Initial release
+### Added
+- Support for auto loading Path Server binary and register language server to VS Code.
+- Support for forwarding server log to VS Code Output panel.

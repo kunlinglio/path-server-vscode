@@ -1,26 +1,49 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as languageClient from 'vscode-languageclient/node';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+let client: languageClient.LanguageClient | undefined;
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "path-server-vscode" is now active!');
+export async function activate(context: vscode.ExtensionContext) {
+    const debugMode = context.extensionMode === vscode.ExtensionMode.Development;
+    const disposables = [];
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('path-server-vscode.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from path-server!');
-	});
+    const serverOutputChannel = vscode.window.createOutputChannel("Path Server Language Server");
+    disposables.push(serverOutputChannel);
+    let traceChannel: vscode.OutputChannel | undefined = undefined;
+    if (debugMode) {
+        traceChannel = vscode.window.createOutputChannel("Path Server Language Server Trace");
+        disposables.push(traceChannel);
+    }
 
-	context.subscriptions.push(disposable);
+    const serverPath = "/Users/lkl/Code/path-server/target/debug/path-server";
+    const serverExecutable: languageClient.Executable = {
+        command: serverPath
+    };
+    const serverOptions: languageClient.ServerOptions = {
+        run: serverExecutable,
+        debug: serverExecutable
+    };
+    const clientOptions: languageClient.LanguageClientOptions = {
+        documentSelector: [
+            { scheme: 'file', language: '*' },
+            { scheme: 'untitled', language: '*' }
+        ],
+        outputChannel: serverOutputChannel,
+        traceOutputChannel: traceChannel
+    };
+
+    client = new languageClient.LanguageClient(
+        'path-server',
+        'Path Server',
+        serverOptions,
+        clientOptions
+    );
+    disposables.push(client);
+
+    await client.start();
+    context.subscriptions.push(vscode.Disposable.from(...disposables));
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+export async function deactivate() {
+    await client?.stop();
+}
